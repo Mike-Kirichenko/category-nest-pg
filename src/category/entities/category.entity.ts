@@ -34,5 +34,5 @@ export class Category {
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP(6)',
   })
-  created_at!: Date;
+  createdDate!: Date;
 }

@@ -27,21 +27,48 @@ export class CategoryService {
     }
   }
 
-  async getCategoryByParam(param: CategoryByParamDto) {
-    const paramObj: { id: number } | { slug: string } = Number.isInteger(
-      Number(param),
-    )
+  private formatParamObject(param: CategoryByParamDto) {
+    return Number.isInteger(Number(param))
       ? { id: Number(param) }
       : { slug: param.toString() };
+  }
+
+  async deleteCategory(param: CategoryByParamDto) {
+    const paramObj = this.formatParamObject(param);
+    let deleted: number;
     try {
-      const category: Category = await this.categoryRepository.findOneByOrFail(
-        paramObj,
-      );
-      return category;
+      const { affected } = await this.categoryRepository.delete(paramObj);
+      deleted = affected;
     } catch (_) {
-      throw new NotFoundException({
-        msg: `category with id/slug: ${param} is not found`,
+      throw new BadRequestException({
+        msg: 'Opps... Something went wrong',
       });
     }
+
+    if (!deleted)
+      throw new NotFoundException({
+        msg: `category is not found`,
+      });
+
+    return { msg: `category removed successfully` };
+  }
+
+  async getCategoryByParam(param: CategoryByParamDto) {
+    const paramObj = this.formatParamObject(param);
+    let found: Category;
+    try {
+      found = await this.categoryRepository.findOneBy(paramObj);
+    } catch (_) {
+      throw new BadRequestException({
+        msg: 'Opps... Something went wrong',
+      });
+    }
+
+    if (!found)
+      throw new NotFoundException({
+        msg: `category is not found`,
+      });
+
+    return found;
   }
 }

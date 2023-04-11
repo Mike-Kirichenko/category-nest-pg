@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete } from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { Response } from 'src/common/types';
 import { CreateCategoryDto, CategoryByParamDto } from './dto';
@@ -8,10 +8,15 @@ export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 
   @Get('/byParam/:param')
-  getCategoriesByParam(
+  getCategoryByParam(
     @Param() { param }: CategoryByParamDto,
   ): Promise<Response> {
     return this.categoryService.getCategoryByParam(param as any);
+  }
+
+  @Delete('/byParam/:param')
+  deleteCategory(@Param() { param }: CategoryByParamDto): Promise<Response> {
+    return this.categoryService.deleteCategory(param as any);
   }
 
   @Post()
