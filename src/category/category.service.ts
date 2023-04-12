@@ -5,7 +5,11 @@ import {
 } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CreateCategoryDto, CategoryByParamDto } from './dto';
+import {
+  CreateCategoryDto,
+  CategoryByParamDto,
+  UpdateCategoryDto,
+} from './dto';
 import { Category } from './entities';
 import { Response } from 'src/common/types';
 
@@ -15,6 +19,12 @@ export class CategoryService {
     @InjectRepository(Category)
     private categoryRepository: Repository<Category>,
   ) {}
+
+  private formatParamObject(param: CategoryByParamDto) {
+    return Number.isInteger(Number(param))
+      ? { id: Number(param) }
+      : { slug: param.toString() };
+  }
 
   async createCategory(categoryDto: CreateCategoryDto): Promise<Response> {
     try {
@@ -27,17 +37,36 @@ export class CategoryService {
     }
   }
 
-  private formatParamObject(param: CategoryByParamDto) {
-    return Number.isInteger(Number(param))
-      ? { id: Number(param) }
-      : { slug: param.toString() };
+  async updateCategory(
+    id: number,
+    categoryDto: UpdateCategoryDto,
+  ): Promise<Response> {
+    let updated: number;
+    try {
+      const { affected } = await this.categoryRepository.update(
+        {
+          id,
+        },
+        categoryDto,
+      );
+      updated = affected;
+    } catch (_) {
+      throw new BadRequestException({
+        msg: 'Opps... Something went wrong',
+      });
+    }
+    if (!updated)
+      throw new NotFoundException({
+        msg: `category is not found`,
+      });
+
+    return { msg: 'category was successfully updated' };
   }
 
-  async deleteCategory(param: CategoryByParamDto) {
-    const paramObj = this.formatParamObject(param);
+  async deleteCategory(id: number): Promise<Response> {
     let deleted: number;
     try {
-      const { affected } = await this.categoryRepository.delete(paramObj);
+      const { affected } = await this.categoryRepository.delete({ id });
       deleted = affected;
     } catch (_) {
       throw new BadRequestException({
@@ -47,13 +76,13 @@ export class CategoryService {
 
     if (!deleted)
       throw new NotFoundException({
-        msg: `category is not found`,
+        msg: `category was not found`,
       });
 
     return { msg: `category removed successfully` };
   }
 
-  async getCategoryByParam(param: CategoryByParamDto) {
+  async getCategoryByParam(param: CategoryByParamDto): Promise<Response> {
     const paramObj = this.formatParamObject(param);
     let found: Category;
     try {
@@ -66,7 +95,7 @@ export class CategoryService {
 
     if (!found)
       throw new NotFoundException({
-        msg: `category is not found`,
+        msg: `category was not found`,
       });
 
     return found;
