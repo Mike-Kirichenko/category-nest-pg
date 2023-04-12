@@ -2,8 +2,9 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
-import { Repository, ILike } from 'typeorm';
+import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   CreateCategoryDto,
@@ -28,57 +29,48 @@ export class CategoryService {
   }
 
   async getList(query: GetCategoriesDto): Promise<Response> {
+    let categories: Category[];
+    const page = Number(query.page) ? Number(query.page) : 1;
     const limit = 2;
-    const pageChunk = (query.page - 1) * limit;
-    const queryObj = {};
+    const partial: number =
+      (page - 1) * (query.pageSize ? query.pageSize : limit);
+    const orderBy: [string, 'ASC' | 'DESC'] = query.sort
+      ? [
+          query.sort.replace(/-/gm, ''),
+          query.sort.startsWith('-') ? 'DESC' : 'ASC',
+        ]
+      : [`"createdDate"`, 'DESC'];
 
-    if (query.search) {
-      queryObj['where'] = [
-        {
-          name: ILike(`%${query.search}%`),
-          ...(query.hasOwnProperty('active') && {
-            active: Boolean(Number(query.active)),
-          }),
-        },
-        {
-          description: ILike(`%${query.search}%`),
-          ...(query.hasOwnProperty('active') && {
-            active: Boolean(Number(query.active)),
-          }),
-        },
-      ];
-    } else {
-      queryObj['where'] = [
-        {
-          ...(query.name && {
-            name: ILike(`%${query.name}%`),
-            ...(query.hasOwnProperty('active') && {
-              active: Boolean(Number(query.active)),
-            }),
-          }),
-        },
-        {
-          ...(query.description && {
-            description: ILike(`%${query.description}%`),
-            ...(query.hasOwnProperty('active') && {
-              active: Boolean(Number(query.active)),
-            }),
-          }),
-        },
-      ];
+    try {
+      if (query.search) {
+        categories = await this.categoryRepository
+          .createQueryBuilder()
+          .select()
+          .where(
+            `(unaccent(name) iLike unaccent(:name) OR unaccent(description) iLike unaccent(:description)) ${
+              query.hasOwnProperty('active') ? 'AND active = :active' : ''
+            }`,
+            {
+              name: `%${query.search}%`,
+              description: `%${query.search}%`,
+              ...(query.hasOwnProperty('active') && {
+                active: Boolean(JSON.parse(query.active)),
+              }),
+            },
+          )
+
+          .offset(partial)
+          .limit(query.pageSize ? query.pageSize : limit)
+          .orderBy(...orderBy)
+          .getMany();
+      }
+    } catch (_) {
+      throw new BadRequestException({
+        msg: 'Opps... Something went wrong',
+      });
     }
-    return this.categoryRepository.find({
-      ...queryObj,
-      take: limit,
-      skip: pageChunk ? pageChunk : 0,
-      order: query.sort
-        ? {
-            [query.sort.replace(/-/gm, '')]: query.sort.includes('-')
-              ? 'desc'
-              : 'asc',
-          }
-        : { createdDate: 'desc' },
-    });
+
+    return categories;
   }
 
   async createCategory(categoryDto: CreateCategoryDto): Promise<Response> {
