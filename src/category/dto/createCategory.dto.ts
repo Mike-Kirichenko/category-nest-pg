@@ -12,12 +12,12 @@ export class CreateCategoryDto {
   @IsNotEmpty()
   slug!: string;
 
-  @Matches(/^(?:[а-яА-ЯЁё\s.!?,_\-]+|[a-zA-Z\s.!?,_\-]+)$/g)
+  @Matches(/^(?:[а-яА-ЯЁё\s.!?,_'\-]+|[a-zA-Z\s.!?,_'\-]+)$/g)
   @IsString()
   @IsNotEmpty()
   name!: string;
 
-  @Matches(/^(?:[а-яА-ЯЁё\s.!?,_\-]+|[a-zA-Z\s.!?,_\-]+)$/g)
+  @Matches(/^(?:[а-яА-ЯЁё\s.!?,_'\-]+|[a-zA-Z\s.!?,_'\-]+)$/g)
   @IsString()
   @IsOptional()
   description?: string;

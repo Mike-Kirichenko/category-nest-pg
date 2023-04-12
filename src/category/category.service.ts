@@ -2,7 +2,6 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
-  OnModuleInit,
 } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -34,36 +33,54 @@ export class CategoryService {
     const limit = 2;
     const partial: number =
       (page - 1) * (query.pageSize ? query.pageSize : limit);
+
     const orderBy: [string, 'ASC' | 'DESC'] = query.sort
       ? [
-          query.sort.replace(/-/gm, ''),
+          query.sort.replace(/-/g, ''),
           query.sort.startsWith('-') ? 'DESC' : 'ASC',
         ]
       : [`"createdDate"`, 'DESC'];
 
-    try {
-      if (query.search) {
-        categories = await this.categoryRepository
-          .createQueryBuilder()
-          .select()
-          .where(
-            `(unaccent(name) iLike unaccent(:name) OR unaccent(description) iLike unaccent(:description)) ${
-              query.hasOwnProperty('active') ? 'AND active = :active' : ''
-            }`,
-            {
-              name: `%${query.search}%`,
-              description: `%${query.search}%`,
-              ...(query.hasOwnProperty('active') && {
-                active: Boolean(JSON.parse(query.active)),
-              }),
-            },
-          )
+    const bindString = query.search
+      ? `(unaccent(name) iLike unaccent(:name) OR unaccent(description) iLike unaccent(:description)) ${
+          query.hasOwnProperty('active') ? 'AND active = :active' : ''
+        }`
+      : query.name && query.description
+      ? `(unaccent(name) iLike unaccent(:name) OR unaccent(description) iLike unaccent(:description)) ${
+          query.hasOwnProperty('active') ? 'AND active = :active' : ''
+        }`
+      : `${
+          (query.name && '(unaccent(name) iLike unaccent(:name))') ||
+          (query.description &&
+            '(unaccent(description) iLike unaccent(:description))')
+        } ${query.hasOwnProperty('active') ? 'AND active = :active' : ''}`;
 
-          .offset(partial)
-          .limit(query.pageSize ? query.pageSize : limit)
-          .orderBy(...orderBy)
-          .getMany();
-      }
+    let bindParams = query.search
+      ? {
+          name: `%${query.search}%`,
+          description: `%${query.search}%`,
+        }
+      : {
+          ...(query.name && { name: `%${query.name}%` }),
+          ...(query.description && { description: `%${query.description}%` }),
+        };
+
+    bindParams = {
+      ...bindParams,
+      ...(query.hasOwnProperty('active') && {
+        active: Boolean(JSON.parse(query.active)),
+      }),
+    };
+
+    try {
+      categories = await this.categoryRepository
+        .createQueryBuilder()
+        .select()
+        .where(bindString, bindParams)
+        .offset(partial)
+        .limit(query.pageSize ? query.pageSize : limit)
+        .orderBy(...orderBy)
+        .getMany();
     } catch (_) {
       throw new BadRequestException({
         msg: 'Opps... Something went wrong',

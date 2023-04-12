@@ -12,6 +12,6 @@ const conn = new Pool({
 });
 
 const run = async () => {
-  await conn.query(`CREATE EXTENSION unaccent SCHEMA public`);
+  await conn.query(`CREATE EXTENSION IF NOT EXISTS unaccent SCHEMA public`);
 };
 run().catch((error) => console.log(error));
