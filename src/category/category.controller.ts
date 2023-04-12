@@ -5,12 +5,14 @@ import {
   Body,
   Param,
   Delete,
+  Query,
   Patch,
   ParseIntPipe,
 } from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { Response } from 'src/common/types';
 import {
+  GetCategoriesDto,
   CreateCategoryDto,
   CategoryByParamDto,
   UpdateCategoryDto,
@@ -19,6 +21,11 @@ import {
 @Controller('category')
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
+
+  @Get()
+  getAllCategories(@Query() query: GetCategoriesDto): Promise<Response> {
+    return this.categoryService.getList(query);
+  }
 
   @Get('/byParam/:param')
   getCategoryByParam(

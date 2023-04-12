@@ -3,12 +3,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { Repository, ILike } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   CreateCategoryDto,
   CategoryByParamDto,
   UpdateCategoryDto,
+  GetCategoriesDto,
 } from './dto';
 import { Category } from './entities';
 import { Response } from 'src/common/types';
@@ -24,6 +25,60 @@ export class CategoryService {
     return Number.isInteger(Number(param))
       ? { id: Number(param) }
       : { slug: param.toString() };
+  }
+
+  async getList(query: GetCategoriesDto): Promise<Response> {
+    const limit = 2;
+    const pageChunk = (query.page - 1) * limit;
+    const queryObj = {};
+
+    if (query.search) {
+      queryObj['where'] = [
+        {
+          name: ILike(`%${query.search}%`),
+          ...(query.hasOwnProperty('active') && {
+            active: Boolean(Number(query.active)),
+          }),
+        },
+        {
+          description: ILike(`%${query.search}%`),
+          ...(query.hasOwnProperty('active') && {
+            active: Boolean(Number(query.active)),
+          }),
+        },
+      ];
+    } else {
+      queryObj['where'] = [
+        {
+          ...(query.name && {
+            name: ILike(`%${query.name}%`),
+            ...(query.hasOwnProperty('active') && {
+              active: Boolean(Number(query.active)),
+            }),
+          }),
+        },
+        {
+          ...(query.description && {
+            description: ILike(`%${query.description}%`),
+            ...(query.hasOwnProperty('active') && {
+              active: Boolean(Number(query.active)),
+            }),
+          }),
+        },
+      ];
+    }
+    return this.categoryRepository.find({
+      ...queryObj,
+      take: limit,
+      skip: pageChunk ? pageChunk : 0,
+      order: query.sort
+        ? {
+            [query.sort.replace(/-/gm, '')]: query.sort.includes('-')
+              ? 'desc'
+              : 'asc',
+          }
+        : { createdDate: 'desc' },
+    });
   }
 
   async createCategory(categoryDto: CreateCategoryDto): Promise<Response> {
