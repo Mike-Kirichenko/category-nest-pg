@@ -12,7 +12,6 @@ import {
   GetCategoriesDto,
 } from './dto';
 import { Category } from './entities';
-import { Response } from 'src/common/types';
 
 @Injectable()
 export class CategoryService {
@@ -27,7 +26,7 @@ export class CategoryService {
       : { slug: param.toString() };
   }
 
-  async getList(query: GetCategoriesDto): Promise<Response> {
+  async getList(query: GetCategoriesDto): Promise<Category[]> {
     let categories: Category[];
     const page = Number(query.page) ? Number(query.page) : 1;
     const limit = 2;
@@ -90,7 +89,7 @@ export class CategoryService {
     return categories;
   }
 
-  async createCategory(categoryDto: CreateCategoryDto): Promise<Response> {
+  async createCategory(categoryDto: CreateCategoryDto): Promise<Category> {
     try {
       const newCategory = this.categoryRepository.create(categoryDto);
       return await this.categoryRepository.save(newCategory);
@@ -104,7 +103,7 @@ export class CategoryService {
   async updateCategory(
     id: number,
     categoryDto: UpdateCategoryDto,
-  ): Promise<Response> {
+  ): Promise<{ msg: string }> {
     let updated: number;
     try {
       const { affected } = await this.categoryRepository.update(
@@ -127,7 +126,7 @@ export class CategoryService {
     return { msg: 'category was successfully updated' };
   }
 
-  async deleteCategory(id: number): Promise<Response> {
+  async deleteCategory(id: number): Promise<{ msg: string }> {
     let deleted: number;
     try {
       const { affected } = await this.categoryRepository.delete({ id });
@@ -146,7 +145,7 @@ export class CategoryService {
     return { msg: `category removed successfully` };
   }
 
-  async getCategoryByParam(param: CategoryByParamDto): Promise<Response> {
+  async getCategoryByParam(param: CategoryByParamDto): Promise<Category> {
     const paramObj = this.formatParamObject(param);
     let found: Category;
     try {
