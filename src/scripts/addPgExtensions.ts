@@ -14,4 +14,6 @@ const conn = new Pool({
 const run = async () => {
   await conn.query(`CREATE EXTENSION IF NOT EXISTS unaccent SCHEMA public`);
 };
-run().catch((error) => console.log(error));
+run()
+  .then(() => console.log('pg extension added'))
+  .catch((error) => console.log(error));
