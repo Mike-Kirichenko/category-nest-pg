@@ -8,28 +8,27 @@ services:
     depends_on:
       - postgres
     env_file:
-      - ./docker-env/.env
+      - .env
     volumes:
       - .:/app
       - /app/node_modules
-    command: npm run start:prod
     links:
       - postgres
     ports:
-      - 5000:5000
+      - 4000:4000
 
   postgres:
     container_name: database
     image: postgres
     restart: on-failure
     env_file:
-      - ./docker-env/.env
+      - .env
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
-      - 5430:5430
+      - 5432:5432
     volumes:
       - category_task:/var/lib/postgresql/data
 

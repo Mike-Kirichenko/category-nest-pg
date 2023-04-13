@@ -3,4 +3,4 @@ WORKDIR /app
 COPY . .
 COPY package*.json ./
 RUN npm ci
-CMD ["npm", "run", "add-pg-extensions && start:prod"]
+CMD ["/bin/sh", "entrypoint.sh"]

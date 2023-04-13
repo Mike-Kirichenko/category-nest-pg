@@ -40,7 +40,7 @@ export class CategoryService {
         ]
       : [`"createdDate"`, 'DESC'];
 
-    const bindString = query.search
+    let bindString = query.search
       ? `(unaccent(name) iLike unaccent(:name) OR unaccent(description) iLike unaccent(:description)) ${
           query.hasOwnProperty('active') ? 'AND active = :active' : ''
         }`
@@ -51,8 +51,13 @@ export class CategoryService {
       : `${
           (query.name && '(unaccent(name) iLike unaccent(:name))') ||
           (query.description &&
-            '(unaccent(description) iLike unaccent(:description))')
-        } ${query.hasOwnProperty('active') ? 'AND active = :active' : ''}`;
+            '(unaccent(description) iLike unaccent(:description))') ||
+          ''
+        }`;
+
+    bindString += query.hasOwnProperty('active')
+      ? `${bindString.length ? 'AND ' : ''} active = :active`
+      : '';
 
     let bindParams = query.search
       ? {
@@ -81,6 +86,7 @@ export class CategoryService {
         .orderBy(...orderBy)
         .getMany();
     } catch (_) {
+      console.log(_);
       throw new BadRequestException({
         msg: 'Opps... Something went wrong',
       });
