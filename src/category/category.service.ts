@@ -86,7 +86,6 @@ export class CategoryService {
         .orderBy(...orderBy)
         .getMany();
     } catch (_) {
-      console.log(_);
       throw new BadRequestException({
         msg: 'Opps... Something went wrong',
       });
