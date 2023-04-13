@@ -56,7 +56,7 @@ export class CategoryService {
         }`;
 
     bindString += query.hasOwnProperty('active')
-      ? `${bindString.length ? 'AND ' : ''} active = :active`
+      ? ` ${bindString.length ? ' AND ' : ''} active = :active`
       : '';
 
     let bindParams = query.search
